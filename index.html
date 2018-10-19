@@ -1,0 +1,35 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Ping master 9000</title>
+</head>
+<body>
+  <h2>Ping master 9000</h2>
+  <label for='inputData'>Cloudformation PR link</label>
+  <input id='inputData' value='http://google.com'/>
+  <label for='selectWebOps'>Who is on duty today?</label>
+  <select id='selectWebOps'>
+    <option value='UDHP0RGAF'>Yuriy Pankiv</option>
+    <option value='UDH88HXMX'>Vladyslav Hlukhov</option>
+  </select>
+  <button id='submitButton'>Submit!</button>
+</body>
+<script>
+  document.getElementById('submitButton').addEventListener('click', function(e) {
+    const pr = document.getElementById('inputData').value;
+    const select = document.getElementById("selectWebOps");
+    const webops = select.options[select.selectedIndex].value;
+    window.fetch('http://localhost:3000/postMessage', {
+      method: "POST",
+        mode: "cors",
+        cache: "no-cache",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({pr, webops})
+    })
+  })
+</script>
+</html>
