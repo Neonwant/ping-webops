@@ -1,11 +1,16 @@
 const { WebClient } = require('@slack/client');
 const express = require('express');
-const app = express();
-const port = 3000;
+const session = require('express-session');
 const bodyParser = require('body-parser')
+const request = require('request');
+const qs = require('querystring');
 
-const SLACK_TOKEN = 'xoxp-460933277351-459782866355-459150543264-78af1a875540b712f573d7e6be44d12f';
+const port = 9000;
+const SLACK_TOKEN = 'secret';
+const CLIENT_ID = 'secret';
+const CLIENT_SECRET = 'secret';
 
+const app = express();
 const web = new WebClient(SLACK_TOKEN);
 
 const VladYuriyChannel = 'DDH4D2X08'
@@ -27,7 +32,16 @@ const sendMessage = ({ pr, webops }) => {
     .catch(console.error);
 }
 
-app.use(bodyParser.json())
+app.use(express.static('/views'));
+app.use(bodyParser.json());
+app.use(
+  session({
+    secret: 'adsasd-rwerwer-sfdsdf', // generate uuid 
+    cookie: { maxAge: 30000 },
+    resave: false,
+    saveUninitialized: false,
+  }
+))
 
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -36,13 +50,53 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
-
 app.post('/postMessage', (req, res) => {
   sendMessage(req.body)
   res.send()
 })
 
 app.get('/', function(req, res){
-  res.send('hello world');
+  res.sendFile(__dirname + '/index.html');
 });
+
+app.get('/login', (req, res) => {
+  const url = `https://github.com/login/oauth/authorize?scope=user:email&client_id=${CLIENT_ID}`;
+  res.redirect(url);
+});
+
+app.get('/redirect', (req, res) => {
+  console.log('Request sent by GitHub: ', req.query);
+
+  const code = req.query.code;
+  const returnedState = req.query.state;
+
+  request.post(`https://github.com/login/oauth/access_token?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&code=${code}&state=${returnedState}`,
+  (error, response, body) => {
+    console.log('Access Token: ', qs.parse(body));
+
+    req.session.access_token = qs.parse(body).access_token;
+    res.redirect('/user_info');
+  });
+  // 
+});
+
+app.get('/user_info', (req, res) => {
+  request.get(
+    {
+      url: 'https://api.github.com/user/public_emails',
+      headers: {
+        Authorization: 'token ' + req.session.access_token,
+        'User-Agent': 'Login-App'
+      }
+    },
+    (error, response, body) => {
+      res.send(
+        "<p>You're logged in! Here's all your emails on GitHub: </p>" +
+        body +
+        '<p>Go back to <a href="/">log in page</a>.</p>'
+      );
+    }
+  );
+});
+
+app.listen(port, () => console.log(`Ping webops app is listening on port ${port}!`));

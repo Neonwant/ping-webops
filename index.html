@@ -15,13 +15,14 @@
     <option value='UDH88HXMX'>Vladyslav Hlukhov</option>
   </select>
   <button id='submitButton'>Submit!</button>
+  <a id="login-button" href="/login">Log In With GitHub</a>
 </body>
 <script>
   document.getElementById('submitButton').addEventListener('click', function(e) {
     const pr = document.getElementById('inputData').value;
     const select = document.getElementById("selectWebOps");
     const webops = select.options[select.selectedIndex].value;
-    window.fetch('http://localhost:3000/postMessage', {
+    window.fetch('http://localhost:9000/postMessage', {
       method: "POST",
         mode: "cors",
         cache: "no-cache",
